@@ -20,7 +20,7 @@ describe("collectPageMetadata", () => {
     const result = collectPageMetadata();
 
     expect(result).toEqual({
-      page_url: "https://example.com/products?page=1",
+      page_url: "https://example.com/products",
       page_title: "Example Products",
       page_path: "/products",
       referrer: null,
@@ -28,7 +28,7 @@ describe("collectPageMetadata", () => {
     });
   });
 
-  it("PM-02: preserves query parameters", () => {
+  it("PM-02: filters non-allowlisted query parameters", () => {
     vi.stubGlobal("window", {
       location: {
         href: "https://example.com/products?id=123&source=test",
@@ -38,11 +38,11 @@ describe("collectPageMetadata", () => {
     const result = collectPageMetadata();
 
     expect(result.page_url).toBe(
-      "https://example.com/products?id=123&source=test"
+      "https://example.com/products"
     );
   });
 
-  it("PM-03: preserves hash in page URL", () => {
+  it("PM-03: removes hash and non-allowlisted query parameters", () => {
     vi.stubGlobal("window", {
       location: {
         href: "https://example.com/products?id=123#details",
@@ -52,7 +52,7 @@ describe("collectPageMetadata", () => {
     const result = collectPageMetadata();
 
     expect(result.page_url).toBe(
-      "https://example.com/products?id=123#details"
+      "https://example.com/products"
     );
     expect(result.page_path).toBe("/products");
   });
@@ -86,7 +86,7 @@ describe("collectPageMetadata", () => {
 
     const result = collectPageMetadata();
 
-    expect(result.referrer).toBe("invalid-url");
+    expect(result.referrer).toBeNull();
     expect(result.referrer_host).toBeNull();
   });
 });

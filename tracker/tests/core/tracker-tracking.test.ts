@@ -86,24 +86,38 @@ describe("Tracker PageView integration", () => {
   });
 
   it("TRACK-02: should start automatic page tracking", () => {
-    mocks.createIdentityManager.mockReturnValue(
-      mockIdentityManager
-    );
+  mocks.createIdentityManager.mockReturnValue(
+    mockIdentityManager
+  );
 
-    const unsubscribe = vi.fn();
+  const unsubscribe = vi.fn();
 
-    mocks.startAutoPageTracking.mockReturnValue(unsubscribe);
+  mocks.startAutoPageTracking.mockReturnValue(unsubscribe);
 
-    const tracker = createTracker();
-    const stop = tracker.startPageTracking();
+  const tracker = createTracker();
+  const stop = tracker.startPageTracking();
 
-    expect(mocks.startAutoPageTracking).toHaveBeenCalledWith(
-      mockIdentityManager,
-      expect.any(Function)
-    );
+  expect(mocks.startAutoPageTracking).toHaveBeenCalledWith(
+    mockIdentityManager,
+    expect.any(Function)
+  );
 
-    expect(stop).toBe(unsubscribe);
-  });
+  // 返回停止控制函数
+  expect(stop).toBeTypeOf("function");
+
+  // 启动追踪时不应立即取消订阅
+  expect(unsubscribe).not.toHaveBeenCalled();
+
+  // 第一次停止应执行底层取消订阅
+  stop();
+
+  expect(unsubscribe).toHaveBeenCalledTimes(1);
+
+  // 重复停止不应重复执行底层取消订阅
+  stop();
+
+  expect(unsubscribe).toHaveBeenCalledTimes(1);
+});
 
   it("TRACK-03: should send PageViewEvent with configured site_id", async () => {
     mocks.createIdentityManager.mockReturnValue(

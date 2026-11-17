@@ -22,6 +22,8 @@ describe("startAutoPageTracking", () => {
   let identityManager: IdentityManager;
   let getIdentity: ReturnType<typeof vi.fn>;
 
+  const cleanupCallbacks: Array<() => void> = [];
+
   function createMockBrowser() {
     listeners = new Map();
 
@@ -89,6 +91,19 @@ describe("startAutoPageTracking", () => {
     vi.stubGlobal("document", mockDocument);
   }
 
+  function startTracking(
+  callback: Parameters<typeof startAutoPageTracking>[1]
+): () => void {
+  const unsubscribe = startAutoPageTracking(
+    identityManager,
+    callback
+  );
+
+  cleanupCallbacks.push(unsubscribe);
+
+  return unsubscribe;
+}
+
   function dispatchWindowEvent(type: string) {
     window.dispatchEvent(new Event(type));
   }
@@ -113,6 +128,10 @@ describe("startAutoPageTracking", () => {
   });
 
   afterEach(() => {
+    cleanupCallbacks.splice(0).reverse().forEach((cleanup) => {
+      cleanup();
+    });
+
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -120,10 +139,7 @@ describe("startAutoPageTracking", () => {
   it("AUTO-01: tracks the initial page automatically", () => {
     const callback = vi.fn();
 
-    const unsubscribe = startAutoPageTracking(
-      identityManager,
-      callback
-    );
+    const unsubscribe = startTracking(callback);
 
     expect(callback).toHaveBeenCalledTimes(1);
 
@@ -142,10 +158,7 @@ describe("startAutoPageTracking", () => {
   it("AUTO-02: tracks pushState navigation", () => {
     const callback = vi.fn();
 
-    const unsubscribe = startAutoPageTracking(
-      identityManager,
-      callback
-    );
+    const unsubscribe = startTracking(callback);
 
     currentTitle = "Products";
 
@@ -166,10 +179,7 @@ describe("startAutoPageTracking", () => {
   it("AUTO-03: tracks replaceState navigation", () => {
     const callback = vi.fn();
 
-    const unsubscribe = startAutoPageTracking(
-      identityManager,
-      callback
-    );
+    const unsubscribe = startTracking(callback);
 
     currentTitle = "Cart";
 
@@ -187,10 +197,7 @@ describe("startAutoPageTracking", () => {
   it("AUTO-04: tracks popstate navigation", () => {
     const callback = vi.fn();
 
-    const unsubscribe = startAutoPageTracking(
-      identityManager,
-      callback
-    );
+    const unsubscribe = startTracking(callback);
 
     currentUrl = "https://example.com/previous";
     currentTitle = "Previous";
@@ -210,10 +217,7 @@ describe("startAutoPageTracking", () => {
   it("AUTO-05: tracks hashchange navigation", () => {
     const callback = vi.fn();
 
-    const unsubscribe = startAutoPageTracking(
-      identityManager,
-      callback
-    );
+    const unsubscribe = startTracking(callback);
 
     currentUrl = "https://example.com/#details";
 
@@ -222,7 +226,7 @@ describe("startAutoPageTracking", () => {
     expect(callback).toHaveBeenCalledTimes(2);
 
     expect(callback.mock.calls[1][0]).toMatchObject({
-      page_url: "https://example.com/#details",
+      page_url: "https://example.com/",
       page_path: "/",
     });
 
@@ -232,10 +236,7 @@ describe("startAutoPageTracking", () => {
   it("AUTO-06: uses previous page URL as SPA referrer", () => {
     const callback = vi.fn();
 
-    const unsubscribe = startAutoPageTracking(
-      identityManager,
-      callback
-    );
+    const unsubscribe = startTracking(callback);
 
     window.history.pushState({}, "", "/products");
 
@@ -257,10 +258,7 @@ describe("startAutoPageTracking", () => {
   it("AUTO-07: keeps visitor and session identity unchanged", () => {
     const callback = vi.fn();
 
-    const unsubscribe = startAutoPageTracking(
-      identityManager,
-      callback
-    );
+    const unsubscribe = startTracking(callback);
 
     window.history.pushState({}, "", "/products");
 
@@ -278,10 +276,7 @@ describe("startAutoPageTracking", () => {
   it("AUTO-08: generates unique event IDs for each page view", () => {
     const callback = vi.fn();
 
-    const unsubscribe = startAutoPageTracking(
-      identityManager,
-      callback
-    );
+    const unsubscribe = startTracking(callback);
 
     window.history.pushState({}, "", "/products");
     window.history.pushState({}, "", "/cart");
@@ -298,10 +293,7 @@ describe("startAutoPageTracking", () => {
   it("AUTO-09: stops tracking after unsubscribe", () => {
     const callback = vi.fn();
 
-    const unsubscribe = startAutoPageTracking(
-      identityManager,
-      callback
-    );
+    const unsubscribe = startTracking(callback);
 
     expect(callback).toHaveBeenCalledTimes(1);
 
