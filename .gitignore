@@ -1,0 +1,43 @@
+# 依赖
+node_modules/
+
+# 环境变量（真实凭据不入库，仅保留模板文件）
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Netlify 本地数据与缓存
+.netlify/
+
+# 构建产出
+dist/
+dashboard/dist/
+tracker/dist/
+
+# 日志
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 备份文件（.bak 及 .bak_* 等所有备份后缀）
+*.bak*
+
+# 回归测试输出与日志
+*regression-output.txt
+build-regression-output.txt
+
+# 编辑器与操作系统
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

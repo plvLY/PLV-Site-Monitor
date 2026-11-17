@@ -1,0 +1,34 @@
+{
+  "name": "site-monitor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "typecheck:backend": "node dashboard/node_modules/typescript/bin/tsc --project tsconfig.backend.json"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@netlify/database": "^2.0.1",
+    "@netlify/functions": "^6.1.0",
+    "bowser": "^2.15.0",
+    "drizzle-orm": "^1.0.0-beta.22",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "dotenv": "^18.0.9",
+    "drizzle-kit": "^1.0.0-beta.22",
+    "tsx": "^4.23.15",
+    "vitest": "^5.1.0"
+  }
+}

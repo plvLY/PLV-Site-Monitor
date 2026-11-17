@@ -1,0 +1,23 @@
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: plv-site-monitor-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: plv_site_monitor_dev
+      POSTGRES_USER: plv_dev
+      POSTGRES_PASSWORD: plv_local_dev_2026
+      TZ: UTC
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - plv_site_monitor_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U plv_dev -d plv_site_monitor_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  plv_site_monitor_pgdata:

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PLV Site Monitor - Tracker E2E</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px;
+      background: #f4f6f9;
+      color: #202938;
+      font-family: Arial, "Microsoft YaHei", sans-serif;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .card {
+      margin-bottom: 20px;
+      padding: 24px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+
+    h2 {
+      font-size: 18px;
+    }
+
+    .info {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 12px;
+      font-size: 14px;
+    }
+
+    .info span:nth-child(odd) {
+      color: #64748b;
+    }
+
+    code {
+      overflow-wrap: anywhere;
+    }
+
+    button {
+      margin: 6px 8px 6px 0;
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 6px;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    button.secondary {
+      background: #475569;
+    }
+
+    #logs {
+      min-height: 180px;
+      max-height: 400px;
+      overflow: auto;
+      padding: 16px;
+      border-radius: 8px;
+      background: #111827;
+      color: #d1fae5;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .status {
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <section class="card">
+      <h1>PLV Site Monitor</h1>
+      <p>Tracker SDK 浏览器端 E2E 测试</p>
+
+      <div class="info">
+        <span>测试页面</span>
+        <code id="page-url"></code>
+
+        <span>采集接口</span>
+        <code id="endpoint"></code>
+
+        <span>Site ID</span>
+        <code id="site-id"></code>
+
+        <span>SDK 状态</span>
+        <span id="sdk-status" class="status">初始化中...</span>
+
+        <span>Visitor ID</span>
+        <code id="visitor-id">-</code>
+
+        <span>Session ID</span>
+        <code id="session-id">-</code>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>一、SPA 路由测试</h2>
+
+      <p>点击不同页面，模拟前端 SPA 路由切换。</p>
+
+      <button data-path="/" data-title="首页">
+        首页
+      </button>
+
+      <button data-path="/about" data-title="关于我们">
+        关于我们
+      </button>
+
+      <button data-path="/products" data-title="产品中心">
+        产品中心
+      </button>
+    </section>
+
+    <section class="card">
+      <h2>二、事件去重测试</h2>
+
+      <p>
+        使用同一个 event_id 连续向采集接口发送两次相同事件。
+      </p>
+
+      <button id="duplicate-test" class="secondary">
+        开始重复事件测试
+      </button>
+    </section>
+
+    <section class="card">
+      <h2>三、测试日志</h2>
+
+      <button id="clear-logs" class="secondary">
+        清空日志
+      </button>
+
+      <pre id="logs"></pre>
+    </section>
+  </main>
+
+  <!-- 使用已有 IIFE 构建产物 -->
+  <script src="/plv-tracker.iife.js"></script>
+
+  <script>
+    const SITE_ID = "accb07ee-6504-4855-b25b-4a5bf22d8164";
+    const ENDPOINT = "http://localhost:8888/api/collect";
+
+    const $ = (id) => document.getElementById(id);
+
+    function log(message, data) {
+      const time = new Date().toLocaleTimeString();
+
+      let output = `[${time}] ${message}`;
+
+      if (data !== undefined) {
+        output += "\n" + JSON.stringify(data, null, 2);
+      }
+
+      $("logs").textContent += output + "\n\n";
+      $("logs").scrollTop = $("logs").scrollHeight;
+
+      console.log(message, data ?? "");
+    }
+
+    $("page-url").textContent = location.href;
+    $("endpoint").textContent = ENDPOINT;
+    $("site-id").textContent = SITE_ID;
+
+    let tracker;
+
+    try {
+      if (!window.PLVSiteMonitor) {
+        throw new Error("PLVSiteMonitor SDK 未加载");
+      }
+
+      tracker = window.PLVSiteMonitor.init({
+        siteId: SITE_ID,
+        endpoint: ENDPOINT,
+        debug: true,
+      });
+
+      const identity = tracker.getIdentity();
+
+      $("visitor-id").textContent = identity.visitorId;
+      $("session-id").textContent = identity.sessionId;
+
+      // 启动自动 PageView 追踪
+      tracker.startPageTracking((event, result) => {
+        log("PageView 发送结果", {
+          eventId: event.event_id,
+          eventType: event.event_type,
+          pageUrl: event.page_url,
+          status: result.status,
+          httpStatus: result.httpStatus,
+          errorCode: result.errorCode ?? null,
+        });
+      });
+
+      $("sdk-status").textContent = "初始化成功";
+      $("sdk-status").style.color = "green";
+
+      log("Tracker 初始化成功", identity);
+      log("自动 PageView 追踪已启动");
+    } catch (error) {
+      $("sdk-status").textContent = "初始化失败";
+      $("sdk-status").style.color = "red";
+
+      log("Tracker 初始化失败", {
+        message: error.message,
+      });
+    }
+
+    // SPA 路由测试
+    document.querySelectorAll("[data-path]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (!tracker) return;
+
+        const path = button.dataset.path;
+        const title = button.dataset.title;
+
+        // 先更新标题，再触发路由变化
+        document.title = title + " - PLV Site Monitor";
+
+        history.pushState({}, "", path);
+
+        $("page-url").textContent = location.href;
+
+        log("SPA 路由切换", {
+          path,
+          title,
+        });
+      });
+    });
+
+    // 使用相同 event_id 连续提交两次
+    $("duplicate-test").addEventListener("click", async () => {
+      if (!tracker) {
+        log("Tracker 尚未初始化");
+        return;
+      }
+
+      const identity = tracker.getIdentity();
+
+      const eventId = crypto.randomUUID();
+      const pageUrl = location.href;
+
+      const event = {
+        site_id: SITE_ID,
+        event_id: eventId,
+        event_type: "page_view",
+
+        visitor_id: identity.visitorId,
+        session_id: identity.sessionId,
+
+        page_url: pageUrl,
+        page_title: document.title,
+        page_path: location.pathname,
+
+        referrer: document.referrer || null,
+        referrer_host: document.referrer
+          ? new URL(document.referrer).hostname
+          : null,
+
+        utm_source: null,
+        utm_medium: null,
+        utm_campaign: null,
+        utm_term: null,
+        utm_content: null,
+
+        occurred_at: new Date().toISOString(),
+      };
+
+      async function sendEvent() {
+        const response = await fetch(ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(event),
+        });
+
+        let body;
+
+        try {
+          body = await response.json();
+        } catch {
+          body = null;
+        }
+
+        return {
+          httpStatus: response.status,
+          body,
+        };
+      }
+
+      try {
+        log("开始重复事件测试", {
+          eventId,
+        });
+
+        const first = await sendEvent();
+
+        log("第一次提交", first);
+
+        const second = await sendEvent();
+
+        log("第二次提交", second);
+
+        const passed =
+          first.httpStatus === 202 &&
+          second.httpStatus === 200 &&
+          second.body?.code === "DUPLICATE_EVENT";
+
+        log(
+          passed
+            ? "重复事件测试通过"
+            : "重复事件测试未通过",
+          {
+            eventId,
+            passed,
+          }
+        );
+      } catch (error) {
+        log("重复事件测试异常", {
+          message: error.message,
+        });
+      }
+    });
+
+    $("clear-logs").addEventListener("click", () => {
+      $("logs").textContent = "";
+    });
+  </script>
+</body>
+</html>

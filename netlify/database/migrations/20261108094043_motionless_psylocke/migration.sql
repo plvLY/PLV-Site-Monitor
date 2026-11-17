@@ -1,0 +1,1 @@
+ALTER TABLE "page_events" DROP COLUMN "ip_hash";--> statement-breakpoint

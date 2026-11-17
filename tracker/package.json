@@ -1,0 +1,29 @@
+{
+  "name": "plv-site-monitor-tracker",
+  "version": "0.1.0",
+  "description": "Lightweight browser tracking SDK for PLV Site Monitor",
+  "type": "module",
+  "main": "./dist/plv-tracker.iife.js",
+  "module": "./dist/plv-tracker.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/plv-tracker.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && vite build",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6"
+  }
+}
