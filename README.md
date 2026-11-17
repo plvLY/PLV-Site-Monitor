@@ -2,7 +2,7 @@
 
 PLV Site Monitor 是面向个人使用的网站访问统计与站点管理系统。首期以 Netlify Serverless 为主要部署方向，支持一个超级管理员管理多个站点，统计 PV、UV、Sessions、Bounce Rate 等指标，并提供 Overview、Trends、Pages、Sources、Devices、Locations 六个统计页面。
 
-> **当前项目状态：** T-04 Dashboard 管理后台尚未整体验收。T-04-13 已验收，T-04-14 已验收，T-04-15 单超级管理员认证部分完成但整体闭环待核对。BUG-001（多站点切换后统计接口返回 403）根因已定位，服务端授权路径已有修复记录，但真实多站点切换尚未验证，尚未闭环。T-05 项目集成与最终验收尚未开始，不得提前部署正式产品。详见 `doc/PLV-Site-Monitor-项目开发进度与BUG汇总.md`。
+> **当前项目状态：** T-04 各专项任务均已完成验收，当前正在进行 T-04-FINAL Dashboard 整体验收收尾，尚未正式关闭。BUG-001、BUG-002、T-04-13、T-04-14、T-04-15 均已验收通过。T-05 已有真实数据链路进展，但尚未整体验收；T-06 正式部署必须等待 T-04、T-05 全部验收通过。详细进度见 `doc/PLV-Site-Monitor-项目开发进度与BUG汇总.md`。
 
 ## 目录结构
 
@@ -92,11 +92,12 @@ npm --prefix tracker run test
 - 每个 Analytics 请求必须经过服务端站点有效性与访问范围校验。
 - `.env` 等含真实凭据的文件禁止提交到仓库。
 
-## 已知问题
+## 已知问题与阶段状态
 
-完整问题列表与优先级，请参阅 `doc/PLV-Site-Monitor-项目开发进度与BUG汇总.md`：
+BUG-001、BUG-002 已正式关闭，不再属于当前未解决问题。
 
-- **BUG-001（最高优先级）：** Dashboard 切换到其他站点后，统计接口返回 `SITE_ACCESS_DENIED` 403。已定位根因（早期本地授权白名单仅包含测试站点 UUID；Dashboard `siteId` 初始值固定读取 `VITE_DEFAULT_SITE_ID`），六个 Analytics Handler 已统一使用超级管理员授权路径，但真实多站点切换尚未验证，问题未闭环。
-- **BUG-002：** Overview 时间范围标签已有修复记录，但缺少最终回归及关闭证据，待最终回归。
-- **T-04-15：** 单超级管理员认证部分完成（管理员初始化、密码哈希核验、六个 Analytics Handler 认证接入、Dashboard Auth Store、Settings API Session 认证等已验收），但整体认证闭环待核对。
+- **T-04-FINAL：** Dashboard 整体验收收尾中，等待最终确认。
+- **T-05：** 真实数据链路仍有剩余任务待核对和完成，尚未整体验收。
+- **T-06：** 正式部署尚未开始，必须等待 T-04、T-05 验收通过。
 
+完整任务状态请参阅 `doc/PLV-Site-Monitor-项目开发进度与BUG汇总.md`。
