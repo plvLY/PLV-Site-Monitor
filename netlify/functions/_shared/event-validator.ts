@@ -53,13 +53,6 @@ const SENSITIVE_QUERY_KEYS = new Set([
   "code_verifier",
 ]);
 
-const ALLOWED_PAGE_QUERY_KEYS = new Set([
-  "utm_source",
-  "utm_medium",
-  "utm_campaign",
-  "utm_term",
-  "utm_content",
-]);
 
 const UTM_FIELDS = [
   "utm_source",
@@ -244,12 +237,7 @@ export function validateCollectEvent(
     );
   }
 
-  const pageUrl = cleanUrl(
-    payload.page_url,
-    "page_url",
-    true,
-    ALLOWED_PAGE_QUERY_KEYS,
-  )!;
+  const pageUrl = cleanUrl(payload.page_url, "page_url", true)!;
 
   if (
     pageUrl.hostname.toLowerCase() !==

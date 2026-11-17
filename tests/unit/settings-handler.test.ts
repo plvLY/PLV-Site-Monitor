@@ -83,7 +83,7 @@ describe("settings API handler", () => {
     const response = await handler(
       new Request("http://localhost/api/settings", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Origin: "http://localhost" },
         body: JSON.stringify({
           privacy: { store_raw_ip: false },
         }),
@@ -122,7 +122,7 @@ describe("settings API handler", () => {
     const response = await handler(
       new Request("http://localhost/api/settings", {
         method: "PATCH",
-        headers: { "Content-Type": "text/plain" },
+        headers: { "Content-Type": "text/plain", Origin: "http://localhost" },
         body: "{}",
       }),
       {} as never,
