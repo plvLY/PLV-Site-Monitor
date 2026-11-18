@@ -5,12 +5,14 @@ import * as schema from "./schema";
 import * as analyticsSchema from "./analytics-schema";
 import * as systemSettingsSchema from "./system-settings-schema";
 import * as authSchema from "./auth-schema";
+import { getConnectionString } from "@netlify/database";
+import { resolveDatabaseConnectionString } from "./connection";
 
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error("DATABASE_URL environment variable is not configured");
-}
+const connectionString = resolveDatabaseConnectionString({
+  context: process.env.CONTEXT,
+  databaseUrl: process.env.DATABASE_URL,
+  getNetlifyConnectionString: getConnectionString,
+});
 
 export const pool = new Pool({
   connectionString,
