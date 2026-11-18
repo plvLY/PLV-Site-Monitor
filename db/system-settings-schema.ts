@@ -31,6 +31,10 @@ export const systemSettings = pgTable(
       .notNull()
       .default(30),
 
+    siteRateLimitMaxRequests: integer("site_rate_limit_max_requests")
+      .notNull()
+      .default(600),
+
     storeRawIp: boolean("store_raw_ip")
       .notNull()
       .default(true),
@@ -58,6 +62,10 @@ export const systemSettings = pgTable(
     check(
       "system_settings_user_agent_retention_check",
       sql`${table.userAgentRetentionDays} BETWEEN 1 AND 30`,
+    ),
+    check(
+      "system_settings_site_rate_limit_max_requests_check",
+      sql`${table.siteRateLimitMaxRequests} BETWEEN 1 AND 10000`,
     ),
   ],
 );

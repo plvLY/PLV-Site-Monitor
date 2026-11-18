@@ -6,6 +6,7 @@ import {
   boolean,
   timestamp,
   bigserial,
+  integer,
   inet,
   index,
   uniqueIndex,
@@ -170,6 +171,52 @@ export const pageEvents = pgTable(
       table.siteId,
       table.pagePath,
     ),
+  ],
+);
+
+
+/**
+ * Site ID 采集限流计数器
+ *
+ * 每个站点、每个固定时间窗口保存一条计数记录。
+ * 计数通过 PostgreSQL 原子 UPSERT 更新。
+ */
+export const siteRateLimitCounters = pgTable(
+  "site_rate_limit_counters",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sites.id, { onDelete: "cascade" }),
+
+    windowStart: timestamp("window_start", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull(),
+
+    requestCount: integer("request_count")
+      .notNull()
+      .default(0),
+
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull()
+      .defaultNow(),
+
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+      mode: "date",
+    }).notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("site_rate_limit_counters_site_window_uidx")
+      .on(table.siteId, table.windowStart),
+
+    index("site_rate_limit_counters_window_start_idx")
+      .on(table.windowStart),
   ],
 );
 

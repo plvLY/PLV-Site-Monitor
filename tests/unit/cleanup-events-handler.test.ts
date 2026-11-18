@@ -23,6 +23,9 @@ const SETTINGS = {
     ip_retention_days: 30,
     user_agent_retention_days: 12,
   },
+  rate_limit: {
+    site_rate_limit_max_requests: 600,
+  },
   privacy: {
     store_raw_ip: true,
   },

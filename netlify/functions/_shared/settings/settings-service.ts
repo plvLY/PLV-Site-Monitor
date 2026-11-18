@@ -26,6 +26,9 @@ function toDto(row: typeof systemSettings.$inferSelect): SystemSettingsDto {
     privacy: {
       store_raw_ip: row.storeRawIp,
     },
+    rate_limit: {
+      site_rate_limit_max_requests: row.siteRateLimitMaxRequests,
+    },
   };
 }
 
@@ -73,6 +76,9 @@ export async function updateSystemSettings(
       : {}),
     ...(patch.storeRawIp !== undefined
       ? { storeRawIp: patch.storeRawIp }
+      : {}),
+      ...(patch.siteRateLimitMaxRequests !== undefined
+      ? { siteRateLimitMaxRequests: patch.siteRateLimitMaxRequests }
       : {}),
     updatedAt: new Date(),
   };

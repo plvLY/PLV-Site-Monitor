@@ -5,10 +5,12 @@ export const SYSTEM_SETTINGS_DEFAULTS = {
   ipRetentionDays: 30,
   userAgentRetentionDays: 30,
   storeRawIp: true,
+  siteRateLimitMaxRequests: 600,
 } as const;
 
 export const SYSTEM_SETTINGS_LIMITS = {
   eventRetentionDays: { min: 1, max: 90 },
   ipRetentionDays: { min: 1, max: 30 },
   userAgentRetentionDays: { min: 1, max: 30 },
+  siteRateLimitMaxRequests: { min: 1, max: 10000 },
 } as const;

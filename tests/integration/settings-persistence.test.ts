@@ -103,6 +103,9 @@ describe("System Settings Persistence Integration", () => {
         privacy: {
           store_raw_ip: true,
         },
+        rate_limit: {
+          site_rate_limit_max_requests: 600,
+        },
       });
 
       const rows = await tx
@@ -139,6 +142,9 @@ describe("System Settings Persistence Integration", () => {
         },
         privacy: {
           store_raw_ip: false,
+        },
+        rate_limit: {
+          site_rate_limit_max_requests: 600,
         },
       };
 
@@ -184,6 +190,9 @@ describe("System Settings Persistence Integration", () => {
         privacy: {
           store_raw_ip: false,
         },
+        rate_limit: {
+          site_rate_limit_max_requests: 600,
+        },
       });
 
       const [row] = await tx
@@ -199,4 +208,55 @@ describe("System Settings Persistence Integration", () => {
       expect(row.storeRawIp).toBe(false);
     });
   });
+
+
+  it("persists site rate limit updates and preserves them during unrelated partial updates", async () => {
+    await withRollback(async (tx) => {
+      await tx
+        .delete(systemSettings)
+        .where(eq(systemSettings.id, 1));
+
+      await getSystemSettings(tx);
+
+      const updated = await updateSystemSettings(
+        {
+          siteRateLimitMaxRequests: 1200,
+        },
+        tx,
+      );
+
+      expect(
+        updated.rate_limit.site_rate_limit_max_requests,
+      ).toBe(1200);
+
+      const partialUpdated = await updateSystemSettings(
+        {
+          ipRetentionDays: 14,
+        },
+        tx,
+      );
+
+      expect(
+        partialUpdated.rate_limit.site_rate_limit_max_requests,
+      ).toBe(1200);
+
+      const reread = await getSystemSettings(tx);
+
+      expect(
+        reread.rate_limit.site_rate_limit_max_requests,
+      ).toBe(1200);
+
+      expect(reread.retention.ip_retention_days).toBe(14);
+
+      const [row] = await tx
+        .select()
+        .from(systemSettings)
+        .where(eq(systemSettings.id, 1))
+        .limit(1);
+
+      expect(row).toBeDefined();
+      expect(row.siteRateLimitMaxRequests).toBe(1200);
+    });
+  });
+
 });

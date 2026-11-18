@@ -21,6 +21,9 @@ const SETTINGS = {
     user_agent_retention_days: 30,
   },
   privacy: { store_raw_ip: true },
+  rate_limit: {
+    site_rate_limit_max_requests: 600,
+  },
 };
 
 function authenticatedAuthorization() {
@@ -131,4 +134,91 @@ describe("settings API handler", () => {
     expect(response.status).toBe(400);
     expect(updateSystemSettings).not.toHaveBeenCalled();
   });
+
+
+  it("accepts and persists the site rate limit setting", async () => {
+    const handler = createSettingsHandler({
+      database: {} as never,
+      authorization: authenticatedAuthorization(),
+    });
+
+    const response = await handler(
+      new Request("http://localhost/api/settings", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "http://localhost",
+        },
+        body: JSON.stringify({
+          rate_limit: {
+            site_rate_limit_max_requests: 1200,
+          },
+        }),
+      }),
+      {} as never,
+    );
+
+    expect(response.status).toBe(200);
+    expect(updateSystemSettings).toHaveBeenCalledWith(
+      { siteRateLimitMaxRequests: 1200 },
+      {},
+    );
+  });
+
+  it.each([0, 10001, 1.5, "600"])(
+    "rejects invalid site rate limit value: %s",
+    async (value) => {
+      const handler = createSettingsHandler({
+        database: {} as never,
+        authorization: authenticatedAuthorization(),
+      });
+
+      const response = await handler(
+        new Request("http://localhost/api/settings", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Origin: "http://localhost",
+          },
+          body: JSON.stringify({
+            rate_limit: {
+              site_rate_limit_max_requests: value,
+            },
+          }),
+        }),
+        {} as never,
+      );
+
+      expect(response.status).toBe(400);
+      expect(updateSystemSettings).not.toHaveBeenCalled();
+    },
+  );
+
+  it("does not include omitted rate limit settings in a partial PATCH", async () => {
+    const handler = createSettingsHandler({
+      database: {} as never,
+      authorization: authenticatedAuthorization(),
+    });
+
+    const response = await handler(
+      new Request("http://localhost/api/settings", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "http://localhost",
+        },
+        body: JSON.stringify({
+          privacy: { store_raw_ip: false },
+        }),
+      }),
+      {} as never,
+    );
+
+    expect(response.status).toBe(200);
+    expect(updateSystemSettings).toHaveBeenCalledWith(
+      { storeRawIp: false },
+      {},
+    );
+  });
+
 });

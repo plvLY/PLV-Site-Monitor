@@ -7,6 +7,9 @@ export interface SystemSettingsDto {
   privacy: {
     store_raw_ip: boolean;
   };
+  rate_limit: {
+    site_rate_limit_max_requests: number;
+  };
 }
 
 export interface SystemSettingsPatch {
@@ -14,4 +17,5 @@ export interface SystemSettingsPatch {
   ipRetentionDays?: number;
   userAgentRetentionDays?: number;
   storeRawIp?: boolean;
+  siteRateLimitMaxRequests?: number;
 }

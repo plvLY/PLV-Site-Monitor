@@ -22,6 +22,9 @@ describe("isRawIpStorageEnabled", () => {
         ip_retention_days: 30,
         user_agent_retention_days: 30,
       },
+      rate_limit: {
+        site_rate_limit_max_requests: 600,
+      },
       privacy: {
         store_raw_ip: true,
       },
@@ -36,6 +39,9 @@ describe("isRawIpStorageEnabled", () => {
         event_retention_days: 90,
         ip_retention_days: 30,
         user_agent_retention_days: 30,
+      },
+      rate_limit: {
+        site_rate_limit_max_requests: 600,
       },
       privacy: {
         store_raw_ip: false,

@@ -1,3 +1,4 @@
+
 import { AnalyticsError } from "../analytics/errors";
 import { SYSTEM_SETTINGS_LIMITS } from "./settings-defaults";
 import type { SystemSettingsPatch } from "./settings-types";
@@ -50,6 +51,26 @@ function parseRetentionDays(
   return days;
 }
 
+function parseSiteRateLimitMaxRequests(value: unknown): number {
+  if (typeof value !== "number" || !Number.isInteger(value)) {
+    throw new AnalyticsError(
+      "INVALID_SETTINGS",
+      "site_rate_limit_max_requests must be an integer.",
+    );
+  }
+
+  const { min, max } = SYSTEM_SETTINGS_LIMITS.siteRateLimitMaxRequests;
+
+  if (value < min || value > max) {
+    throw new AnalyticsError(
+      "INVALID_SETTINGS",
+      `site_rate_limit_max_requests must be between ${min} and ${max}.`,
+    );
+  }
+
+  return value;
+}
+
 /**
  * Validate the public PATCH payload and map snake_case API fields to
  * camelCase service fields. Unknown fields and empty patches are rejected.
@@ -59,7 +80,7 @@ export function validateSettingsPatch(value: unknown): SystemSettingsPatch {
     throw new AnalyticsError("INVALID_SETTINGS", "Request body must be an object.");
   }
 
-  assertAllowedKeys(value, ["retention", "privacy"]);
+  assertAllowedKeys(value, ["retention", "privacy", "rate_limit"]);
 
   const patch: SystemSettingsPatch = {};
 
@@ -112,6 +133,20 @@ export function validateSettingsPatch(value: unknown): SystemSettingsPatch {
       }
 
       patch.storeRawIp = value.privacy.store_raw_ip;
+    }
+  }
+
+  if (value.rate_limit !== undefined) {
+    if (!isRecord(value.rate_limit)) {
+      throw new AnalyticsError("INVALID_SETTINGS", "rate_limit must be an object.");
+    }
+
+    assertAllowedKeys(value.rate_limit, ["site_rate_limit_max_requests"]);
+
+    if ("site_rate_limit_max_requests" in value.rate_limit) {
+      patch.siteRateLimitMaxRequests = parseSiteRateLimitMaxRequests(
+        value.rate_limit.site_rate_limit_max_requests,
+      );
     }
   }
 

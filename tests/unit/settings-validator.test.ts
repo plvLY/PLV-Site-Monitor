@@ -90,6 +90,75 @@ describe("system settings validator", () => {
     ).toThrow("store_raw_ip must be a boolean");
   });
 
+
+  it("accepts a valid partial site rate limit update", () => {
+    expect(
+      validateSettingsPatch({
+        rate_limit: {
+          site_rate_limit_max_requests: 300,
+        },
+      }),
+    ).toEqual({
+      siteRateLimitMaxRequests: 300,
+    });
+  });
+
+  it.each([1, 10000])(
+    "accepts site rate limit boundary value: %s",
+    (value) => {
+      expect(
+        validateSettingsPatch({
+          rate_limit: {
+            site_rate_limit_max_requests: value,
+          },
+        }),
+      ).toEqual({
+        siteRateLimitMaxRequests: value,
+      });
+    },
+  );
+
+  it.each([0, -1, 10001, 1.5, "600", null])(
+    "rejects invalid site rate limit values: %s",
+    (value) => {
+      expect(() =>
+        validateSettingsPatch({
+          rate_limit: {
+            site_rate_limit_max_requests: value,
+          },
+        }),
+      ).toThrow(AnalyticsError);
+    },
+  );
+
+  it("rejects unknown rate limit fields", () => {
+    expect(() =>
+      validateSettingsPatch({
+        rate_limit: {
+          site_rate_limit_max_requests: 600,
+          window_seconds: 60,
+        },
+      }),
+    ).toThrow("Unknown settings field");
+  });
+
+  it("rejects non-object rate limit values", () => {
+    expect(() =>
+      validateSettingsPatch({
+        rate_limit: "600",
+      }),
+    ).toThrow("rate_limit must be an object");
+  });
+
+  it("rejects empty rate limit objects", () => {
+    expect(() =>
+      validateSettingsPatch({
+        rate_limit: {},
+      }),
+    ).toThrow(AnalyticsError);
+  });
+
+
   it("rejects empty patches and empty nested objects", () => {
     expect(() => validateSettingsPatch({})).toThrow(AnalyticsError);
     expect(() => validateSettingsPatch({ retention: {} })).toThrow(AnalyticsError);

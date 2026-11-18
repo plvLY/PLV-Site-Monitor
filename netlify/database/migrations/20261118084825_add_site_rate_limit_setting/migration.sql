@@ -1,0 +1,2 @@
+ALTER TABLE "system_settings" ADD COLUMN "site_rate_limit_max_requests" integer DEFAULT 600 NOT NULL;--> statement-breakpoint
+ALTER TABLE "system_settings" ADD CONSTRAINT "system_settings_site_rate_limit_max_requests_check" CHECK ("site_rate_limit_max_requests" BETWEEN 1 AND 10000);

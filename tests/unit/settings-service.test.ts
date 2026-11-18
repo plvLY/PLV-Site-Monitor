@@ -13,6 +13,7 @@ function createRow(overrides: Record<string, unknown> = {}) {
     eventRetentionDays: 90,
     ipRetentionDays: 30,
     userAgentRetentionDays: 30,
+    siteRateLimitMaxRequests: 600,
     storeRawIp: true,
     createdAt: new Date("2026-11-12T00:00:00.000Z"),
     updatedAt: new Date("2026-11-12T00:00:00.000Z"),
@@ -69,6 +70,7 @@ describe("system settings service", () => {
       eventRetentionDays: 90,
       ipRetentionDays: 30,
       userAgentRetentionDays: 30,
+      siteRateLimitMaxRequests: 600,
       storeRawIp: true,
     });
     expect(fake.insertChain.onConflictDoNothing).toHaveBeenCalledOnce();
@@ -79,6 +81,9 @@ describe("system settings service", () => {
         user_agent_retention_days: 30,
       },
       privacy: { store_raw_ip: true },
+      rate_limit: {
+        site_rate_limit_max_requests: 600,
+      },
     });
   });
 

@@ -21,6 +21,9 @@ const DEFAULT_SETTINGS: SystemSettings = {
   privacy: {
     store_raw_ip: true,
   },
+  rate_limit: {
+    site_rate_limit_max_requests: 600,
+  },
 }
 
 const loading = ref(true)
@@ -67,6 +70,7 @@ function cloneSettings(value: SystemSettings): SystemSettings {
   return {
     retention: { ...value.retention },
     privacy: { ...value.privacy },
+    rate_limit: { ...value.rate_limit },
   }
 }
 
@@ -92,6 +96,19 @@ function validateSettings(): boolean {
     return false
   }
 
+    const maxRequests =
+    settings.value.rate_limit.site_rate_limit_max_requests
+
+  if (
+    !Number.isInteger(maxRequests) ||
+    maxRequests < 1 ||
+    maxRequests > 10000
+  ) {
+    validationMessage.value =
+      '每站点每 60 秒最大请求数必须是 1 至 10000 之间的整数。'
+    return false
+  }
+
   return true
 }
 
@@ -103,6 +120,17 @@ function buildPatch(): SystemSettingsPatch {
 
   const retention: SystemSettingsPatch['retention'] = {}
   const privacy: SystemSettingsPatch['privacy'] = {}
+
+  const rateLimit: SystemSettingsPatch['rate_limit'] = {}
+
+  if (
+    current.rate_limit.site_rate_limit_max_requests !==
+    previous.rate_limit.site_rate_limit_max_requests
+  ) {
+    rateLimit.site_rate_limit_max_requests =
+      current.rate_limit.site_rate_limit_max_requests
+  }
+
 
   if (
     current.retention.event_retention_days !==
@@ -143,6 +171,10 @@ function buildPatch(): SystemSettingsPatch {
 
   if (Object.keys(privacy).length > 0) {
     patch.privacy = privacy
+  }
+
+  if (Object.keys(rateLimit).length > 0) {
+    patch.rate_limit = rateLimit
   }
 
   return patch
@@ -350,6 +382,52 @@ onUnmounted(() => {
               <p>
                 关闭原始 IP 存储后，系统仍保留 Geo 国家、地区和城市分析信息。
                 此设置不会删除此前已经保存的 IP 数据。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-heading">
+            <div>
+              <h2>采集请求限流</h2>
+              <p>控制单个站点在固定时间窗口内允许接收的采集请求数量。</p>
+            </div>
+            <span class="settings-section-tag">RATE LIMIT</span>
+          </div>
+
+          <div class="settings-card">
+            <div class="retention-row">
+              <div class="retention-info">
+                <label for="site-rate-limit-max-requests">
+                  每站点最大请求数
+                </label>
+                <p>
+                  每个站点独立计算，超过限制的采集请求将被拒绝。
+                </p>
+              </div>
+
+              <div class="retention-control">
+                <input
+                  id="site-rate-limit-max-requests"
+                  v-model.number="settings.rate_limit.site_rate_limit_max_requests"
+                  type="number"
+                  min="1"
+                  max="10000"
+                  step="1"
+                  :disabled="saving"
+                />
+                <span>次</span>
+                <small>1–10000</small>
+              </div>
+            </div>
+
+            <div class="settings-card-note">
+              <span class="note-icon">i</span>
+              <p>
+                限流窗口固定为 60 秒，不支持修改。
+                默认每个站点每 60 秒最多接收 600 次采集请求。
+                不同站点分别计算限流额度。
               </p>
             </div>
           </div>

@@ -2605,6 +2605,108 @@ it("IT-04：不存在的站点应该返回 404", async () => {
   });
 
 
+  it("RL-08-01：Collect Handler 应执行站点级限流并返回 429", async () => {
+    const originalSettings = await getSystemSettings(db);
+    const originalMaxRequests =
+      originalSettings.rate_limit.site_rate_limit_max_requests;
+
+    try {
+      // 清除当前测试站点已有的限流计数。
+      await pool.query(
+        `DELETE FROM site_rate_limit_counters WHERE site_id = $1`,
+        [siteId],
+      );
+
+      // 临时将每站点每 60 秒请求上限调整为 2。
+      await db
+        .update(systemSettings)
+        .set({ siteRateLimitMaxRequests: 2 });
+
+      // 无效事件不应该消耗请求额度。
+      const invalidResponse = await collectHandler(
+        createRequest({
+          ...payload,
+          event_id: randomUUID(),
+          event_type: "click",
+        }),
+        context,
+      );
+
+      await expectError(
+        invalidResponse,
+        400,
+        "UNSUPPORTED_EVENT_TYPE",
+      );
+
+      // 第一次有效请求。
+      const firstResponse = await collectHandler(
+        createRequest({
+          ...payload,
+          event_id: randomUUID(),
+        }),
+        context,
+      );
+
+      expect(firstResponse.status).toBe(202);
+
+      // 第二次有效请求。
+      const secondResponse = await collectHandler(
+        createRequest({
+          ...payload,
+          event_id: randomUUID(),
+        }),
+        context,
+      );
+
+      expect(secondResponse.status).toBe(202);
+
+      // 第三次请求应该超过限额。
+      const thirdResponse = await collectHandler(
+        createRequest({
+          ...payload,
+          event_id: randomUUID(),
+        }),
+        context,
+      );
+
+      expect(thirdResponse.status).toBe(429);
+
+      await expectError(
+        thirdResponse,
+        429,
+        "RATE_LIMIT_EXCEEDED",
+      );
+
+      // 验证 Retry-After。
+      const retryAfter = Number(
+        thirdResponse.headers.get("Retry-After"),
+      );
+
+      expect(Number.isInteger(retryAfter)).toBe(true);
+      expect(retryAfter).toBeGreaterThanOrEqual(1);
+      expect(retryAfter).toBeLessThanOrEqual(60);
+
+      // 验证 429 响应仍然包含正确的 CORS。
+      expect(
+        thirdResponse.headers.get("Access-Control-Allow-Origin"),
+      ).toBe(`https://${domain}`);
+    } finally {
+      // 恢复全局系统配置。
+      await db
+        .update(systemSettings)
+        .set({
+          siteRateLimitMaxRequests: originalMaxRequests,
+        });
+
+      // 清理本测试产生的限流计数。
+      await pool.query(
+        `DELETE FROM site_rate_limit_counters WHERE site_id = $1`,
+        [siteId],
+      );
+    }
+  });
+
+
 });
 
 

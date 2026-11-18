@@ -1,9 +1,8 @@
-
 import { resolveVisitorMetadata } from "./_shared/visitor-metadata";
 import type { Config, Context } from "@netlify/functions";
 import { and, eq, sql } from "drizzle-orm";
 
-import { db } from "../../db/client";
+import { db, pool } from "../../db/client";
 import { sites, siteDomains, pageEvents } from "../../db/schema";
 import { analyticsEventFacts } from "../../db/analytics-schema";
 
@@ -27,6 +26,13 @@ import {
 } from "./_shared/analytics/aggregate-writer";
 
 import { isRawIpStorageEnabled } from "./_shared/settings/raw-ip-policy";
+
+import { getSystemSettings } from "./_shared/settings/settings-service";
+
+import {
+  checkSiteRateLimit,
+  SITE_RATE_LIMIT_WINDOW_SECONDS,
+} from "./_shared/rate-limit/rate-limit-service";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -340,6 +346,37 @@ export default async (
       }
 
       throw error;
+    }
+
+    // 10. 站点级采集限流。
+    // 仅通过前置校验的有效事件消耗请求额度。
+    const settings = await getSystemSettings();
+    const maxRequests =
+      settings.rate_limit.site_rate_limit_max_requests;
+
+    const rateLimitResult = await checkSiteRateLimit(
+      pool,
+      siteId,
+      maxRequests,
+    );
+
+    if (!rateLimitResult.allowed) {
+      const response = errorResponse(
+        "RATE_LIMIT_EXCEEDED",
+        "The site has exceeded its request limit. Please retry later.",
+        429,
+        parsedOrigin.origin,
+      );
+
+      response.headers.set(
+        "Retry-After",
+        String(
+          rateLimitResult.retryAfterSeconds ??
+            SITE_RATE_LIMIT_WINDOW_SECONDS,
+        ),
+      );
+
+      return response;
     }
 
     // 10.1 读取原始 IP 隐私设置。
