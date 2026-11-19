@@ -25,6 +25,7 @@ describe("resolveDatabaseConnectionString", () => {
     const result = resolveDatabaseConnectionString({
       context: "dev",
       databaseUrl: "postgres://localhost/local",
+      netlifyDatabaseUrl: "postgres://netlify/local",
       getNetlifyConnectionString,
     });
 
@@ -59,6 +60,39 @@ describe("resolveDatabaseConnectionString", () => {
     });
 
     expect(result).toBe("postgres://netlify/preview");
+    expect(getNetlifyConnectionString).toHaveBeenCalledOnce();
+  });
+
+  it("uses Netlify Database when context is missing but NETLIFY_DB_URL exists", () => {
+    const getNetlifyConnectionString = vi.fn(
+      () => "postgres://netlify/production",
+    );
+
+    const result = resolveDatabaseConnectionString({
+      context: undefined,
+      databaseUrl: undefined,
+      netlifyDatabaseUrl: "postgres://netlify/production",
+      getNetlifyConnectionString,
+    });
+
+    expect(result).toBe("postgres://netlify/production");
+    expect(getNetlifyConnectionString).toHaveBeenCalledOnce();
+  });
+
+  it("prefers Netlify Database over DATABASE_URL when context is missing", () => {
+    const getNetlifyConnectionString = vi.fn(
+      () => "postgres://netlify/production",
+    );
+
+    const result = resolveDatabaseConnectionString({
+      context: undefined,
+      databaseUrl: "postgres://localhost/local",
+      netlifyDatabaseUrl: "postgres://netlify/production",
+      getNetlifyConnectionString,
+    });
+
+    expect(result).toBe("postgres://netlify/production");
+    expect(getNetlifyConnectionString).toHaveBeenCalledOnce();
   });
 
   it("throws when local DATABASE_URL is missing", () => {

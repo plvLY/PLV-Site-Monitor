@@ -11,6 +11,7 @@ import { resolveDatabaseConnectionString } from "./connection";
 const connectionString = resolveDatabaseConnectionString({
   context: process.env.CONTEXT,
   databaseUrl: process.env.DATABASE_URL,
+  netlifyDatabaseUrl: process.env.NETLIFY_DB_URL,
   getNetlifyConnectionString: getConnectionString,
 });
 
