@@ -7,3 +7,9 @@
   port = 8888
   targetPort = 5173
   command = "npm --prefix dashboard run dev -- --host 127.0.0.1"
+
+# Vue SPA History Mode Fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
